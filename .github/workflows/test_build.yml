@@ -48,3 +48,4 @@ jobs:
               repo: context.repo.repo,
               body: "This is an automated comment to notify about the new PR.",
             })
+            
