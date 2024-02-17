@@ -1,0 +1,16 @@
+name: Terraform Build Workflow
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # Log Build Start
+    - name: Build Start
+      run: echo Terraform Build Initiating...
+
+ 
