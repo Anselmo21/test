@@ -11,30 +11,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
- 
       - name: Create Random Text File
         run: |
           echo "Random Content $(date)" > random_text_file.txt
           cat random_text_file.txt
 
-
-      - name: Simulate Build Step
-        run: echo "Building project..."
+      - name: Upload Text File as Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: random-text-file
+          path: random_text_file.txt
 
   wait_for_approval:
     needs: prepare_text_file
     runs-on: ubuntu-latest
     environment: staging-workflow
     steps:
-      - name: Dummy Approval Step
-        run: echo "This step waits for manual approval in the 'staging-workflow' environment."
+      - name: Download Text File Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: random-text-file
+
+      - name: Output Text File Contents
+        run: |
+          cat random_text_file.txt
+          echo "This step waits for manual approval in the 'staging-workflow' environment."
 
   apply_changes:
     needs: wait_for_approval
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply Changes
+
+      - name: Simulate Applying Changes
         run: |
-          echo "Applying changes..."
-        
+          echo "Applying changes after approval..."
