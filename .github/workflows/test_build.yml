@@ -1,51 +1,49 @@
-name: Create Pull Request and Post Comment
+name: Automated PR Creation and Commenting
 
-on: 
+on:
   push:
     branches:
-      - main # or any other branch you want to trigger this workflow
+      - main
 
 jobs:
-  create_pr_and_comment:
+  create_and_comment_pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # Fetch all history for all tags and branches
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Generate unique branch name
+        id: branch_name
+        run: echo "new-branch-name=$(date +'%Y%m%d%H%M%S')-random" >> $GITHUB_ENV
 
       - name: Create Random Text File
         run: |
           echo "Random Content $(date)" > random_text_file.txt
-
-      - name: Create a new branch
-        run: |
-          git checkout -b new-branch
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+          git checkout -b ${{ env.new-branch-name }}
           git add random_text_file.txt
           git commit -m "Add random text file"
-          git push origin new-branch
+          git push --set-upstream origin ${{ env.new-branch-name }}
 
       - name: Create Pull Request
         id: create_pr
         uses: repo-sync/pull-request@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          source_branch: "new-branch"
+          source_branch: ${{ env.new-branch-name }}
           destination_branch: "main"
-          pr_title: "Automated PR to Merge Changes"
-          pr_body: "This is an automated pull request to merge changes from the new branch into main."
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_title: "Automated PR to merge ${env.new-branch-name} into main"
+          pr_body: "This is an automated pull request to update from branch ${{ env.new-branch-name }}"
 
       - name: Post PR Comment
         uses: actions/github-script@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const prNumber = ${{ steps.create_pr.outputs.pr_number }};
-            github.issues.createComment({
-              issue_number: prNumber,
+            github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "This is an automated comment to notify about the new PR.",
+              issue_number: ${{ steps.create_pr.outputs.pr_number }},
+              body: "Automatically generated text file has been added.",
             })
-            
