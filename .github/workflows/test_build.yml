@@ -1,9 +1,9 @@
 name: Automated PR Creation and Commenting
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    # Runs every 5 minutes
+    - cron: '*/5 * * * *'
 
 jobs:
   create_and_comment_pr:
@@ -11,9 +11,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
+
       - name: Generate unique branch name
-        id: branch_name
         run: echo "new-branch-name=$(date +'%Y%m%d%H%M%S')-random" >> $GITHUB_ENV
 
       - name: Create Random Text File
