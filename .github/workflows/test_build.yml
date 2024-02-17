@@ -1,54 +1,42 @@
-name: Automated PR Creation and Commenting
+name: Publish Text File on Push
 
 on: 
   push:
     branches:
-      - main
-
+      - main # Adjust this as necessary
 
 jobs:
-  create_and_comment_pr:
-    if: github.actor != 'github-actions[bot]'
+  prepare_text_file:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Generate unique branch name
-        run: echo "new-branch-name=$(date +'%Y%m%d%H%M%S')-random" >> $GITHUB_ENV
-
+      # Create a random text file
       - name: Create Random Text File
         run: |
           echo "Random Content $(date)" > random_text_file.txt
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "GitHub Actions"
-          git checkout -b ${{ env.new-branch-name }}
-          git add random_text_file.txt
-          git commit -m "Add random text file"
-          git push --set-upstream origin ${{ env.new-branch-name }}
+          cat random_text_file.txt
 
-      - name: Create Pull Request
-        id: create_pr
-        uses: repo-sync/pull-request@v2
-        with:
-          source_branch: ${{ env.new-branch-name }}
-          destination_branch: "main"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_title: "Automated PR to merge ${env.new-branch-name} into main"
-          pr_body: "This is an automated pull request to update from branch ${{ env.new-branch-name }}"
+      # This step simulates a build step you might have
+      - name: Simulate Build Step
+        run: echo "Building project..."
 
-      - name: Post PR Comment with File Content
-        uses: actions/github-script@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            // Read the content of the random text file
-            const content = fs.readFileSync('random_text_file.txt', { encoding: 'utf8' });
-            // Post the content as a comment on the PR
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ steps.create_pr.outputs.pr_number }},
-              body: `Content of the automatically generated text file:\n\n\`\`\`\n${content}\n\`\`\``,
-            });
+  wait_for_approval:
+    needs: prepare_text_file
+    runs-on: ubuntu-latest
+    environment: staging-workflow # Ensure this environment is set up for manual approvals
+    steps:
+      - name: Dummy Approval Step
+        run: echo "This step waits for manual approval in the 'staging-workflow' environment."
+
+  # This step would follow after manual approval
+  apply_changes:
+    needs: wait_for_approval
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply Changes
+        run: |
+          echo "Applying changes..."
+          # Here you would have steps that use the text file created earlier or other actions.
+          # Since GitHub Actions don't share filesystem state between jobs, you'd likely upload/download artifacts or have other mechanisms to share state.
