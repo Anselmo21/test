@@ -1,12 +1,14 @@
 name: Automated PR Creation and Commenting
 
-on:
-  schedule:
-    # Runs every 5 minutes
-    - cron: '*/5 * * * *'
+on: 
+  push:
+    branches:
+      - main
+
 
 jobs:
   create_and_comment_pr:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
