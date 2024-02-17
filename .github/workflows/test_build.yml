@@ -11,6 +11,6 @@ jobs:
 
     # Log Build Start
     - name: Build Start
-      run: echo Terraform Build Initiating...
+      run: echo Terraform Build Initiati
 
  
