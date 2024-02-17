@@ -1,16 +1,41 @@
-name: Terraform Build Workflow
+name: Publish Text File on Push
 
-on: push
+on: 
+  push:
+    branches:
+      - main 
 
 jobs:
-  build:
+  prepare_text_file:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-
-    # Log Build Start
-    - name: Build Start
-      run: echo Terraform Build Initiati
+      - uses: actions/checkout@v4
 
  
+      - name: Create Random Text File
+        run: |
+          echo "Random Content $(date)" > random_text_file.txt
+          cat random_text_file.txt
+
+
+      - name: Simulate Build Step
+        run: echo "Building project..."
+
+  wait_for_approval:
+    needs: prepare_text_file
+    runs-on: ubuntu-latest
+    environment: staging-workflow
+    steps:
+      - name: Dummy Approval Step
+        run: echo "This step waits for manual approval in the 'staging-workflow' environment."
+
+
+  apply_changes:
+    needs: wait_for_approval
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply Changes
+        run: |
+          echo "Applying changes..."
+        
