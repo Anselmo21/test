@@ -1,48 +1,50 @@
-name: Publish Text File on Push
+name: Create Pull Request and Post Comment
 
 on: 
   push:
     branches:
-      - main 
+      - main # or any other branch you want to trigger this workflow
 
 jobs:
-  prepare_text_file:
+  create_pr_and_comment:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Fetch all history for all tags and branches
 
       - name: Create Random Text File
         run: |
           echo "Random Content $(date)" > random_text_file.txt
-          cat random_text_file.txt
 
-      - name: Upload Text File as Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: random-text-file
-          path: random_text_file.txt
-
-  wait_for_approval:
-    needs: prepare_text_file
-    runs-on: ubuntu-latest
-    environment: staging-workflow
-    steps:
-      - name: Download Text File Artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: random-text-file
-
-      - name: Output Text File Contents
+      - name: Create a new branch
         run: |
-          cat random_text_file.txt
-          echo "This step waits for manual approval in the 'staging-workflow' environment."
+          git checkout -b new-branch
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add random_text_file.txt
+          git commit -m "Add random text file"
+          git push origin new-branch
 
-  apply_changes:
-    needs: wait_for_approval
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      - name: Create Pull Request
+        id: create_pr
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source_branch: "new-branch"
+          destination_branch: "main"
+          pr_title: "Automated PR to Merge Changes"
+          pr_body: "This is an automated pull request to merge changes from the new branch into main."
 
-      - name: Simulate Applying Changes
-        run: |
-          echo "Applying changes after approval..."
+      - name: Post PR Comment
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = ${{ steps.create_pr.outputs.pr_number }};
+            github.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "This is an automated comment to notify about the new PR.",
+            })
